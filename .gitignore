@@ -30,6 +30,7 @@ Makefile
 *.DS_Store
 ._*
 *.mod
+.*.swp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
