@@ -5,7 +5,7 @@ from isca import DryCodeBase, DiagTable, Experiment, Namelist, GFDL_BASE
 
 
 def build_experiment():
-    NCORES = 1
+    NCORES = 4
     res_xy = 'T21'
     res_z = 12
     RESOLUTION = res_xy, res_z
@@ -113,16 +113,10 @@ def simulate():
         exp.run(i, num_cores=NCORES)  # use the restart i-1 by default
     return
 
-def plot_snapshots():
-    ds = xr.open_dataset("/net/scratch/jfinkel/proj-response/Isca_data/held_suarez_lowres_4cores/run0007/atmos_monthly.nc")
-    fig,ax = plt.subplots()
-
 def main():
     
     todo = dict({
         'simulate':            1,
-        'compute_stats':       1,
-        'plot_stats':          1,
         })
 
     if todo['simulate']:
