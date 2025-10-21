@@ -3,12 +3,13 @@ import xarray as xr
 
 from isca import DryCodeBase, DiagTable, Experiment, Namelist, GFDL_BASE
 
+import jfhs_config as cfg
 
 def build_experiment():
-    NCORES = 4
-    res_xy = 'T21'
-    res_z = 12
-    RESOLUTION = res_xy, res_z
+
+    resolution_params = cfg.get_resolution_params()
+    ensemble_params = cfg.get_resolution_params()
+    data_dir,plot_dir = cfg.get_output_dirs()
     
     # a CodeBase can be a directory on the computer,
     # useful for iterative development
@@ -26,12 +27,13 @@ def build_experiment():
     # create an Experiment object to handle the configuration of model parameters
     # and output diagnostics
     
-    exp_name = f'held_suarez_xy{res_xy}z{res_z}'
+    exp_name = cfg.get_expt_name(resolution_params)
     exp = Experiment(exp_name, codebase=cb)
     
     #Tell model how to write diagnostics
     diag = DiagTable()
-    diag.add_file('atmos_5daily', 5, 'days', time_units='days')
+    n_save_per_day = 24 // resolution_params['temporal']
+    diag.add_file(f'atmos_{n_save_per_day}xday', n_save_per_day, 'days', time_units='days')
     
     #Tell model which diagnostics to write
     diag.add_field('dynamics', 'ps', time_avg=False)
@@ -50,9 +52,9 @@ def build_experiment():
     namelist = Namelist({
         'main_nml': {
             'dt_atmos': 600,
-            'days': 5,
+            'days': ensemble_params['duration_max_chunk'],
             'calendar': 'thirty_day',
-            'current_date': [2000,1,1,0,0,0]
+            'current_date': [2000,1,1,0,0,0] # but does this get replaced from one run to the next? 
         },
     
         'atmosphere_nml': {
@@ -102,25 +104,39 @@ def build_experiment():
         }
     })
     exp.namelist = namelist
-    exp.set_resolution(*RESOLUTION)
-    return exp,cb,NCORES
+    exp.set_resolution(resolution_params['horizontal'], resolution_params['vertical'])
+    return exp
 
-def simulate():
-    exp,cb,NCORES = build_experiment()
-    cb.compile()
-    exp.run(1, num_cores=NCORES, use_restart=False)
+def simulate(NCORES):
+    exp = build_experiment()
+    exp.codebase.compile()
+
+    oneday = 24
+    t = 0
+    i_chunk = 0
+    # --------- Spinup -------------
+    # TODO convert each of the following three stages into a call to a function to configure the next run based on initial file, perturbation, duration 
+    while t < spinup:
+        duration_chunk = min(ensemble_params['duration_max_chunk'], ensemble_params['spinup'] - t)
+        exp.namelist['main_nml']['days'] = duration_chunk//oneday
+        exp.run(i_chunk, num_cores=NCORES, use_restart=False)
+        t += duration_chunk
+        i_chunk += 1
+    # -------- Spinon ---------------
+    # -------- Spinoff --------------
     for i in range(2, 13):
         exp.run(i, num_cores=NCORES)  # use the restart i-1 by default
     return
 
 def main():
+    NCORES = 4
     
     todo = dict({
         'simulate':            1,
         })
 
     if todo['simulate']:
-        simulate()
+        simulate(NCORES)
 
 #Lets do a run!
 if __name__ == '__main__':
