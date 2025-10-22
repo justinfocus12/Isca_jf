@@ -209,7 +209,7 @@ class Experiment(Logger, EventEmitter):
         self.clear_rundir()
 
         indir =  P(self.rundir, 'INPUT')
-        outdir = P(self.datadir, self.runfmt % i)
+        outdir = P(self.datadir, self.runfmt % i) # JF customize the naming 
         resdir = P(self.rundir, 'RESTART')
 
         if self.check_for_existing_output(i):

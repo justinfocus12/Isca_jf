@@ -8,7 +8,7 @@ import jfhs_config as cfg
 def build_experiment():
 
     resolution_params = cfg.get_resolution_params()
-    ensemble_params = cfg.get_resolution_params()
+    ensemble_params = cfg.get_ensemble_params()
     data_dir,plot_dir = cfg.get_output_dirs()
     
     # a CodeBase can be a directory on the computer,
@@ -33,7 +33,7 @@ def build_experiment():
     #Tell model how to write diagnostics
     diag = DiagTable()
     n_save_per_day = 24 // resolution_params['temporal']
-    diag.add_file(f'atmos_{n_save_per_day}xday', n_save_per_day, 'days', time_units='days')
+    diag.add_file(f'atmos_{n_save_per_day}xday', resolution_params['temporal'], time_units='hours' )
     
     #Tell model which diagnostics to write
     diag.add_field('dynamics', 'ps', time_avg=False)
@@ -52,7 +52,7 @@ def build_experiment():
     namelist = Namelist({
         'main_nml': {
             'dt_atmos': 600,
-            'days': ensemble_params['duration_max_chunk'],
+            'days': ensemble_params['duration_chunk_max'],
             'calendar': 'thirty_day',
             'current_date': [2000,1,1,0,0,0] # but does this get replaced from one run to the next? 
         },
@@ -111,21 +111,49 @@ def simulate(NCORES):
     exp = build_experiment()
     exp.codebase.compile()
 
+    ensemble_params = cfg.get_ensemble_params()
+
     oneday = 24
-    t = 0
-    i_chunk = 0
-    # --------- Spinup -------------
     # TODO convert each of the following three stages into a call to a function to configure the next run based on initial file, perturbation, duration 
-    while t < spinup:
-        duration_chunk = min(ensemble_params['duration_max_chunk'], ensemble_params['spinup'] - t)
+    # TODO build up a database including graph structure of parents-children 
+    # --------- Spinup -------------
+    t = 0
+    run_label = 0 # for naming the file 
+    i_chunk_spu = 0 # for tracking progress along a single segment of the tree 
+    while t < ensemble_params['duration_spinup']:
+        print(f'>>>>>>>>>>>>{ i_chunk_spu = } <<<<<<<<<<<<<')
+        duration_chunk = min(ensemble_params['duration_chunk_max'], ensemble_params['duration_spinup'] - t)
         exp.namelist['main_nml']['days'] = duration_chunk//oneday
-        exp.run(i_chunk, num_cores=NCORES, use_restart=False)
+        run_label += 1
+        exp.run(run_label, num_cores=NCORES, use_restart=False)
         t += duration_chunk
-        i_chunk += 1
-    # -------- Spinon ---------------
+        i_chunk_spu += 1
+    run_label_spu = run_label
+    # -------- Spinon (ancestor) ---------------
+    i_chunk_anc = 0
+    while t < ensemble_params['duration_spinup'] + ensemble_params['duration_spinon']:
+        print(f'>>>>>>>>>>>>{ i_chunk_anc = } <<<<<<<<<<<<<')
+        duration_chunk = min(ensemble_params['duration_chunk_max'], ensemble_params['duration_spinup'] + ensemble_params['duration_spinon'] - t)
+        exp.namelist['main_nml']['days'] = duration_chunk//oneday
+        run_label += 1
+        restart_file = exp.get_restart_file(run_label_spu) if i_chunk_anc==0 else exp.get_restart_file(run_label-1)
+        exp.run(run_label, num_cores=NCORES, use_restart=True, restart_file=restart_file)
+        t += duration_chunk
+        i_chunk_anc += 1
     # -------- Spinoff --------------
-    for i in range(2, 13):
-        exp.run(i, num_cores=NCORES)  # use the restart i-1 by default
+    for i_dsc in range(ensemble_params['n_spinoff']):
+        print(f'>>>>>>>>>>>>{ i_dsc = } <<<<<<<<<<<<<')
+        i_chunk_dsc = 0
+        t = ensemble_params['duration_spinup']
+        while t < ensemble_params['duration_spinup'] + ensemble_params['duration_spinoff']:
+            print(f'>>>>>>>>>>>>{ i_chunk_dsc = } <<<<<<<<<<<<<')
+            duration_chunk = min(ensemble_params['duration_chunk_max'], ensemble_params['duration_spinup'] + ensemble_params['duration_spinon'] - t)
+            exp.namelist['main_nml']['days'] = duration_chunk//oneday
+            run_label += 1
+            restart_file = exp.get_restart_file(run_label_spu) if i_chunk_dsc==0 else exp.get_restart_file(run_labl)
+            exp.run(run_label, num_cores=NCORES, use_restart=True, restart_file=restart_file)
+            t += duration_chunk
+            i_chunk_dsc += 1
     return
 
 def main():
