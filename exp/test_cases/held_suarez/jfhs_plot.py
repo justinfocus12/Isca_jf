@@ -14,5 +14,7 @@ def plot_temperature_snapshots(run_label):
     resolution_params = cfg.get_resolution_params()
     n_save_per_day = 24 // resolution_params['temporal']
     ds = xr.open_dataset(join(data_dir,r'run%04d/atmos_%dhourly.nc'%(run_label,resolution_params['temporal'])), engine='netcdf4')
+
+
     
 

@@ -107,6 +107,10 @@ def build_experiment():
     exp.set_resolution(resolution_params['horizontal'], resolution_params['vertical'])
     return exp
 
+def perturb_restart(archive_file, input_directory, pert_ps):
+    with tarfile.open(archive-file, 'r:gz') as tar:
+        tar.extractall(path=input_directory)
+
 def simulate(NCORES):
     exp = build_experiment()
     exp.codebase.compile()
@@ -137,6 +141,7 @@ def simulate(NCORES):
         exp.namelist['main_nml']['days'] = duration_chunk//oneday
         run_label += 1
         restart_file = exp.get_restart_file(run_label_spu) if i_chunk_anc==0 else exp.get_restart_file(run_label-1)
+        # TODO add some functionality to experiment.py where I can pass in a perturbation and instructions of how to apply it, and then in extract_restart_archive insert this little perturbation through the .nc fil. Also save th perturbation itself as s separate file 
         exp.run(run_label, num_cores=NCORES, use_restart=True, restart_file=restart_file)
         t += duration_chunk
         i_chunk_anc += 1
