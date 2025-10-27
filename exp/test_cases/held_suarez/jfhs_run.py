@@ -129,7 +129,7 @@ def simulate(NCORES):
         duration_chunk = min(ensemble_params['duration_chunk_max'], ensemble_params['duration_spinup'] - t)
         exp.namelist['main_nml']['days'] = duration_chunk//oneday
         run_label += 1
-        exp.run(run_label, num_cores=NCORES, use_restart=False)
+        exp.run(run_label, num_cores=NCORES, use_restart=(i_chunk_spu>=1))
         t += duration_chunk
         i_chunk_spu += 1
     run_label_spu = run_label
@@ -149,6 +149,7 @@ def simulate(NCORES):
     for i_dsc in range(ensemble_params['n_spinoff']):
         print(f'>>>>>>>>>>>>{ i_dsc = } <<<<<<<<<<<<<')
         i_chunk_dsc = 0
+        # TODO put in a small perturbation here 
         t = ensemble_params['duration_spinup']
         while t < ensemble_params['duration_spinup'] + ensemble_params['duration_spinoff']:
             print(f'>>>>>>>>>>>>{ i_chunk_dsc = } <<<<<<<<<<<<<')

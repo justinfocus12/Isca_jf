@@ -1,5 +1,6 @@
 # functions to name output directories from parameter dictionaries
 from os.path import join
+from collections import namedtuple
 
 def get_resolution_params():
     resolution_params = dict(
@@ -9,15 +10,18 @@ def get_resolution_params():
             )
     return resolution_params
 
+
 def get_ensemble_params():
     # Hours are the fundamental time unit 
     oneday = 24
+    current_date = dict(year=2000, month=1, day=1, hour=0, second=0, microsecond=0)
     ensemble_params = dict(
-            duration_spinup = 10*oneday,
-            duration_chunk_max = 6*oneday, 
-            duration_spinon = 9*oneday,
-            duration_spinoff = 5*oneday,
+            duration_spinup = 40*oneday,
+            duration_chunk_max = 30*oneday, 
+            duration_spinon = 20*oneday,
+            duration_spinoff = 25*oneday,
             n_spinoff = 0, # number of branches off the spinoff
+            current_date = current_date,
             )
     return ensemble_params
 
