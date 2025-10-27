@@ -30,17 +30,17 @@ def get_expt_name(resolution_params):
     return "_".join([get_date_str(), expt_name])
 
 def get_date_str():
-    return '2025-10-22'
+    return '2025-10-28'
 
 
 def get_output_dirs():
     resolution_params = get_resolution_params()
     expt_name = get_expt_name(resolution_params)
     expt_dir = join(
-            "/net/scratch/jfinkel/proj-response/Isca_data",
+            "/net/scratch/jfinkel/proj-response/Isca_data/",
             expt_name,
             )
-    data_dir = expt_dir
+    data_dir = expt_dir # If want to change this, must move output from the module's default folder
     plot_dir = join(expt_dir, "plots")
     return data_dir, plot_dir
 

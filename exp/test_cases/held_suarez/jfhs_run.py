@@ -32,8 +32,8 @@ def build_experiment():
     
     #Tell model how to write diagnostics
     diag = DiagTable()
-    n_save_per_day = 24 // resolution_params['temporal']
-    diag.add_file(f'atmos_{n_save_per_day}xday', resolution_params['temporal'], time_units='hours' )
+    n_hour_per_save = resolution_params['temporal']
+    diag.add_file(r'atmos_%dhourly'%(n_hour_per_save), resolution_params['temporal'], time_units='hours' )
     
     #Tell model which diagnostics to write
     diag.add_field('dynamics', 'ps', time_avg=False)
@@ -42,8 +42,8 @@ def build_experiment():
     diag.add_field('dynamics', 'ucomp', time_avg=False)
     diag.add_field('dynamics', 'vcomp', time_avg=False)
     diag.add_field('dynamics', 'temp', time_avg=False)
-    diag.add_field('dynamics', 'vor', time_avg=False)
-    diag.add_field('dynamics', 'div', time_avg=False)
+    #diag.add_field('dynamics', 'vor', time_avg=False)
+    #diag.add_field('dynamics', 'div', time_avg=False)
     
     exp.diag_table = diag
     
